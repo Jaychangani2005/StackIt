@@ -220,6 +220,22 @@
     transition: var(--transition-slow);
   }
 
+  /* Form animations */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Vote button styles */
   .vote-button {
     @apply p-2 rounded-md transition-fast hover:bg-muted/80 flex items-center justify-center;

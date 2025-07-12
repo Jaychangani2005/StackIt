@@ -61,7 +61,7 @@ export function Header({
           <div className="flex items-center gap-2">
             <MessageSquare className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-              DevQ&A
+              StackIt
             </h1>
           </div>
         </div>

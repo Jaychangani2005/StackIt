@@ -69,7 +69,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
           >
             <X className="h-4 w-4" />
           </Button>
-          <CardTitle className="text-center">Welcome to DevQ&A</CardTitle>
+          <CardTitle className="text-center">Welcome to StackIt</CardTitle>
           <CardDescription className="text-center">
             Join our community of developers
           </CardDescription>

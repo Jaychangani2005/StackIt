@@ -6,11 +6,12 @@ import { AuthDialog } from "@/components/auth/AuthDialog";
 import { QuestionsList } from "@/components/questions/QuestionsList";
 import { AskQuestionForm } from "@/components/questions/AskQuestionForm";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user, isAuthenticated, login, register, logout } = useAuth();
   const [authDialog, setAuthDialog] = useState<{ isOpen: boolean; mode: 'login' | 'register' }>({
     isOpen: false,
     mode: 'login'
@@ -50,7 +51,7 @@ const Index = () => {
 
   const handleAuthAction = (action: 'login' | 'register' | 'logout') => {
     if (action === 'logout') {
-      setCurrentUser(null);
+      logout();
       toast({
         title: "Signed out successfully",
         description: "Come back soon!",
@@ -60,24 +61,29 @@ const Index = () => {
     }
   };
 
-  const handleAuthSubmit = (data: any, mode: 'login' | 'register') => {
-    // Simulate authentication
-    const newUser = {
-      id: '1',
-      name: data.name || 'John Doe',
-      email: data.email,
-      reputation: mode === 'register' ? 1 : 1245
-    };
-    
-    setCurrentUser(newUser);
-    setAuthDialog({ isOpen: false, mode: 'login' });
-    
-    toast({
-      title: mode === 'register' ? "Account created!" : "Welcome back!",
-      description: mode === 'register' 
-        ? "Your account has been created successfully." 
-        : "You've been signed in successfully.",
-    });
+  const handleAuthSubmit = async (data: any, mode: 'login' | 'register') => {
+    try {
+      if (mode === 'login') {
+        await login(data.email, data.password);
+      } else {
+        await register(data.name, data.email, data.password);
+      }
+      
+      setAuthDialog({ isOpen: false, mode: 'login' });
+      
+      toast({
+        title: mode === 'register' ? "Account created!" : "Welcome back!",
+        description: mode === 'register' 
+          ? "Your account has been created successfully." 
+          : "You've been signed in successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Authentication failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleQuestionClick = (questionId: string) => {
@@ -124,7 +130,7 @@ const Index = () => {
       {/* Header */}
       <Header
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        currentUser={currentUser}
+        currentUser={user}
         onAuthAction={handleAuthAction}
         notifications={notifications}
         onMarkNotificationAsRead={handleMarkNotificationAsRead}
@@ -153,7 +159,7 @@ const Index = () => {
           <div className="max-w-5xl mx-auto">
             {activeSection === 'questions' && (
               <QuestionsList
-                currentUser={currentUser}
+                currentUser={user}
                 onQuestionClick={handleQuestionClick}
                 onAskQuestion={() => setAskQuestionOpen(true)}
               />
@@ -162,7 +168,7 @@ const Index = () => {
             {activeSection === 'home' && (
               <div className="text-center py-12">
                 <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                  Welcome to DevQ&A
+                  Welcome to StackIt
                 </h1>
                 <p className="text-xl text-muted-foreground mb-8">
                   A community-driven platform for developers to ask questions and share knowledge
@@ -205,33 +211,42 @@ const Index = () => {
 
             {activeSection === 'users' && (
               <div>
-                <h1 className="text-3xl font-bold mb-6">Users</h1>
+                <h1 className="text-3xl font-bold mb-6">Top Users</h1>
                 <p className="text-muted-foreground mb-8">
-                  Top contributors in our community
+                  Community leaders and contributors
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {[
-                    { name: 'Sarah Smith', reputation: 2890, questions: 45, answers: 123 },
-                    { name: 'Emily Chen', reputation: 3456, questions: 67, answers: 89 },
-                    { name: 'David Wilson', reputation: 1789, questions: 23, answers: 156 },
-                    { name: 'John Doe', reputation: 1245, questions: 34, answers: 78 },
-                    { name: 'Mike Johnson', reputation: 567, questions: 12, answers: 45 },
-                    { name: 'Lisa Brown', reputation: 4123, questions: 89, answers: 234 }
-                  ].map((user) => (
-                    <div key={user.name} className="p-4 rounded-lg bg-gradient-card shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-primary font-semibold">
-                            {user.name.split(' ').map(n => n[0]).join('')}
+                    { name: 'Sarah Smith', reputation: 15420, answers: 342, questions: 45 },
+                    { name: 'Michael Chen', reputation: 12850, answers: 298, questions: 32 },
+                    { name: 'Emily Johnson', reputation: 11230, answers: 267, questions: 28 },
+                    { name: 'David Wilson', reputation: 9870, answers: 234, questions: 19 },
+                    { name: 'Lisa Brown', reputation: 8540, answers: 198, questions: 15 },
+                    { name: 'James Davis', reputation: 7230, answers: 167, questions: 12 }
+                  ].map((user, index) => (
+                    <div key={user.name} className="p-6 rounded-lg bg-gradient-card shadow-soft">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-lg font-semibold text-primary">
+                            {user.name.charAt(0)}
                           </span>
                         </div>
                         <div>
-                          <div className="font-semibold">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">{user.reputation} reputation</div>
+                          <h3 className="font-semibold">{user.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {user.reputation.toLocaleString()} reputation
+                          </p>
                         </div>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {user.questions} questions • {user.answers} answers
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium">{user.answers}</p>
+                          <p className="text-muted-foreground">Answers</p>
+                        </div>
+                        <div>
+                          <p className="font-medium">{user.questions}</p>
+                          <p className="text-muted-foreground">Questions</p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -245,12 +260,12 @@ const Index = () => {
       {/* Auth Dialog */}
       <AuthDialog
         isOpen={authDialog.isOpen}
-        onClose={() => setAuthDialog({ isOpen: false, mode: 'login' })}
         mode={authDialog.mode}
+        onClose={() => setAuthDialog({ isOpen: false, mode: 'login' })}
         onSubmit={handleAuthSubmit}
       />
 
-      {/* Ask Question Dialog */}
+      {/* Ask Question Form */}
       <AskQuestionForm
         isOpen={askQuestionOpen}
         onClose={() => setAskQuestionOpen(false)}
@@ -261,3 +276,4 @@ const Index = () => {
 };
 
 export default Index;
+

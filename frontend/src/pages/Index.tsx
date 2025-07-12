@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -7,6 +7,7 @@ import { QuestionsList } from "@/components/questions/QuestionsList";
 import { AskQuestionForm } from "@/components/questions/AskQuestionForm";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { notificationService, Notification } from "@/services/notificationService";
 
 const Index = () => {
   const { toast } = useToast();
@@ -19,35 +20,29 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('questions');
   const [askQuestionOpen, setAskQuestionOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      type: 'answer' as const,
-      message: 'Sarah Smith answered your question about React hooks',
-      user: { name: 'Sarah Smith', avatar: undefined },
-      timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-      read: false,
-      questionId: '1'
-    },
-    {
-      id: '2',
-      type: 'comment' as const,
-      message: 'Emily Chen commented on your answer about TypeScript',
-      user: { name: 'Emily Chen', avatar: undefined },
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      read: false,
-      questionId: '2'
-    },
-    {
-      id: '3',
-      type: 'mention' as const,
-      message: 'David Wilson mentioned you in a question about Node.js',
-      user: { name: 'David Wilson', avatar: undefined },
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      read: true,
-      questionId: '3'
-    }
-  ]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Popular tags with question counts
+  const popularTags = [
+    { name: 'javascript', count: 1234 },
+    { name: 'react', count: 987 },
+    { name: 'python', count: 756 },
+    { name: 'typescript', count: 654 },
+    { name: 'node.js', count: 543 },
+    { name: 'css', count: 432 },
+    { name: 'html', count: 321 },
+    { name: 'sql', count: 234 },
+    { name: 'git', count: 123 },
+    { name: 'algorithms', count: 98 },
+    { name: 'docker', count: 87 },
+    { name: 'aws', count: 76 }
+  ];
+
+  // Load notifications on component mount
+  useEffect(() => {
+    setNotifications(notificationService.getNotifications());
+  }, []);
 
   const handleAuthAction = (action: 'login' | 'register' | 'logout') => {
     if (action === 'logout') {
@@ -100,29 +95,77 @@ const Index = () => {
     });
   };
 
+  const handleTagClick = (tag: string) => {
+    setSelectedTag(tag);
+    setActiveSection('questions');
+    toast({
+      title: `Filtering by ${tag}`,
+      description: `Showing questions tagged with ${tag}`,
+    });
+  };
+
+  const handleClearTagFilter = () => {
+    setSelectedTag(null);
+    toast({
+      title: "Filter cleared",
+      description: "Showing all questions",
+    });
+  };
+
   const handleMarkNotificationAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
+    notificationService.markAsRead(notificationId);
+    setNotifications(notificationService.getNotifications());
   };
 
   const handleMarkAllNotificationsAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+    notificationService.markAllAsRead();
+    setNotifications(notificationService.getNotifications());
   };
 
-  const handleNotificationClick = (notification: any) => {
-    // In a real app, this would navigate to the relevant question
-    console.log('Navigate to notification:', notification);
+  const handleNotificationClick = (notification: Notification) => {
+    // Mark as read if not already read
+    if (!notification.read) {
+      notificationService.markAsRead(notification.id);
+      setNotifications(notificationService.getNotifications());
+    }
+
+    // Navigate to the relevant question
+    if (notification.questionId) {
+      navigate(`/questions/${notification.questionId}`);
+    }
+    
     toast({
       title: "Notification clicked",
       description: `Navigating to ${notification.type} notification`,
     });
+  };
+
+  // Function to add sample notifications (for testing)
+  const addSampleNotifications = () => {
+    if (user) {
+      notificationService.createAnswerNotification(
+        '1',
+        'How to implement authentication in React with JWT tokens?',
+        'Alex Johnson'
+      );
+      notificationService.createCommentNotification(
+        '2',
+        '5',
+        'Python list comprehension vs map() performance comparison',
+        'Maria Garcia'
+      );
+      notificationService.createMentionNotification(
+        '3',
+        'CSS Grid vs Flexbox: When to use which one?',
+        'David Wilson'
+      );
+      setNotifications(notificationService.getNotifications());
+      
+      toast({
+        title: "Sample notifications added",
+        description: "Check the notification bell for new notifications",
+      });
+    }
   };
 
   return (
@@ -144,6 +187,8 @@ const Index = () => {
           isOpen={sidebarOpen}
           activeSection={activeSection}
           onSectionChange={setActiveSection}
+          onTagClick={handleTagClick}
+          popularTags={popularTags}
         />
 
         {/* Sidebar overlay for mobile */}
@@ -158,11 +203,33 @@ const Index = () => {
         <main className="flex-1 p-6 md:ml-0">
           <div className="max-w-5xl mx-auto">
             {activeSection === 'questions' && (
-              <QuestionsList
-                currentUser={user}
-                onQuestionClick={handleQuestionClick}
-                onAskQuestion={() => setAskQuestionOpen(true)}
-              />
+              <div>
+                {/* Tag filter indicator */}
+                {selectedTag && (
+                  <div className="mb-6 p-4 rounded-lg bg-gradient-card shadow-soft">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">Filtering by:</span>
+                        <span className="tag">{selectedTag}</span>
+                      </div>
+                      <button
+                        onClick={handleClearTagFilter}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Clear filter
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                <QuestionsList
+                  currentUser={user}
+                  onQuestionClick={handleQuestionClick}
+                  onAskQuestion={() => setAskQuestionOpen(true)}
+                  selectedTag={selectedTag}
+                  onTagClick={handleTagClick}
+                />
+              </div>
             )}
 
             {activeSection === 'home' && (
@@ -173,6 +240,19 @@ const Index = () => {
                 <p className="text-xl text-muted-foreground mb-8">
                   A community-driven platform for developers to ask questions and share knowledge
                 </p>
+                
+                {/* Test notification button (for development) */}
+                {user && (
+                  <div className="mb-8">
+                    <button
+                      onClick={addSampleNotifications}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    >
+                      Add Sample Notifications (Test)
+                    </button>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
                   <div className="p-6 rounded-lg bg-gradient-card shadow-soft">
                     <h3 className="text-lg font-semibold mb-2">Ask Questions</h3>
@@ -197,11 +277,15 @@ const Index = () => {
                   Browse questions by topic
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {['javascript', 'react', 'python', 'typescript', 'node.js', 'css', 'html', 'sql', 'git', 'algorithms', 'docker', 'aws'].map((tag) => (
-                    <div key={tag} className="p-4 rounded-lg bg-gradient-card shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
-                      <div className="tag mb-2">{tag}</div>
+                  {popularTags.map((tag) => (
+                    <div 
+                      key={tag.name} 
+                      className="p-4 rounded-lg bg-gradient-card shadow-soft hover:shadow-medium transition-shadow cursor-pointer"
+                      onClick={() => handleTagClick(tag.name)}
+                    >
+                      <div className="tag mb-2">{tag.name}</div>
                       <p className="text-sm text-muted-foreground">
-                        {Math.floor(Math.random() * 500) + 50} questions
+                        {tag.count} questions
                       </p>
                     </div>
                   ))}

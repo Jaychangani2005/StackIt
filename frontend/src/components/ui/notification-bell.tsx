@@ -15,7 +15,7 @@ import { ScrollArea } from './scroll-area'
 
 interface Notification {
   id: string
-  type: 'answer' | 'comment' | 'mention'
+  type: 'answer' | 'comment' | 'mention' | 'vote' | 'accept'
   message: string
   user: {
     name: string
@@ -24,6 +24,8 @@ interface Notification {
   timestamp: Date
   read: boolean
   questionId?: string
+  answerId?: string
+  commentId?: string
 }
 
 interface NotificationBellProps {
@@ -66,6 +68,10 @@ export const NotificationBell = ({
         return '💭'
       case 'mention':
         return '@'
+      case 'vote':
+        return '👍'
+      case 'accept':
+        return '✅'
       default:
         return '🔔'
     }
@@ -79,8 +85,29 @@ export const NotificationBell = ({
         return 'text-blue-600'
       case 'mention':
         return 'text-orange-600'
+      case 'vote':
+        return 'text-purple-600'
+      case 'accept':
+        return 'text-emerald-600'
       default:
         return 'text-gray-600'
+    }
+  }
+
+  const getNotificationTitle = (type: Notification['type']) => {
+    switch (type) {
+      case 'answer':
+        return 'New Answer'
+      case 'comment':
+        return 'New Comment'
+      case 'mention':
+        return 'Mention'
+      case 'vote':
+        return 'Vote'
+      case 'accept':
+        return 'Answer Accepted'
+      default:
+        return 'Notification'
     }
   }
 
@@ -152,6 +179,9 @@ export const NotificationBell = ({
                       <span className="text-sm font-medium truncate">
                         {notification.user.name}
                       </span>
+                      <Badge variant="outline" className="text-xs">
+                        {getNotificationTitle(notification.type)}
+                      </Badge>
                       {!notification.read && (
                         <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                       )}

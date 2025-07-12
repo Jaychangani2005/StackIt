@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Check, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Voting } from '@/components/ui/voting';
+import { CommentForm } from './CommentForm';
+import { CommentsList } from './CommentsList';
+
+interface Comment {
+  id: string;
+  content: string;
+  author: {
+    name: string;
+    avatar?: string;
+  };
+  createdAt: Date;
+}
 
 interface Answer {
   id: string;
@@ -32,6 +44,8 @@ interface AnswerCardProps {
   onEdit?: (answerId: string) => void;
   onDelete?: (answerId: string) => void;
   showActions?: boolean;
+  comments?: Comment[];
+  onAddComment?: (answerId: string, content: string) => Promise<void>;
 }
 
 export const AnswerCard = ({
@@ -42,21 +56,23 @@ export const AnswerCard = ({
   onAccept,
   onEdit,
   onDelete,
-  showActions = true
+  showActions = true,
+  comments = [],
+  onAddComment
 }: AnswerCardProps) => {
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [commentError, setCommentError] = useState('');
+
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
     return date.toLocaleDateString();
   };
 
@@ -72,6 +88,19 @@ export const AnswerCard = ({
 
   const isEdited = answer.updatedAt && 
     answer.updatedAt.getTime() !== answer.createdAt.getTime();
+
+  const handleAddComment = async (content: string) => {
+    setIsSubmittingComment(true);
+    setCommentError('');
+    try {
+      await onAddComment?.(answer.id, content);
+      setShowCommentForm(false);
+    } catch (err: any) {
+      setCommentError('Failed to add comment.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   return (
     <Card className={`transition-all duration-200 ${
@@ -93,7 +122,6 @@ export const AnswerCard = ({
               size="md"
             />
           </div>
-          
           {/* Answer content */}
           <div className="flex-1 min-w-0">
             {answer.isAccepted && (
@@ -104,14 +132,31 @@ export const AnswerCard = ({
                 </Badge>
               </div>
             )}
-            
             <div 
               className="prose prose-sm max-w-none mb-4"
               dangerouslySetInnerHTML={{ __html: answer.content }}
             />
-            
+            {/* Comments List */}
+            <CommentsList comments={comments} />
+            {/* Add Comment Button & Form */}
+            {currentUser && (
+              <div className="mt-2">
+                {!showCommentForm ? (
+                  <Button size="sm" variant="ghost" onClick={() => setShowCommentForm(true)}>
+                    <MessageSquare className="h-4 w-4 mr-1" /> Add Comment
+                  </Button>
+                ) : (
+                  <CommentForm
+                    onSubmit={handleAddComment}
+                    onCancel={() => setShowCommentForm(false)}
+                    isSubmitting={isSubmittingComment}
+                    error={commentError}
+                  />
+                )}
+              </div>
+            )}
             {/* Answer meta */}
-            <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center justify-between pt-4 border-t mt-4">
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={answer.author.avatar} />
@@ -126,7 +171,6 @@ export const AnswerCard = ({
                   </div>
                 </div>
               </div>
-              
               <div className="flex items-center gap-4">
                 <div className="text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
@@ -145,7 +189,6 @@ export const AnswerCard = ({
                     </div>
                   )}
                 </div>
-                
                 {/* Action buttons */}
                 {showActions && (canEdit || canDelete) && (
                   <div className="flex gap-1">

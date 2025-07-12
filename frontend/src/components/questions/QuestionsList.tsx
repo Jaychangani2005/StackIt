@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuestionCard } from "./QuestionCard";
 
-// Mock data
+// Extended mock data for pagination testing
 const mockQuestions = [
   {
     id: '1',
@@ -45,40 +45,105 @@ const mockQuestions = [
   },
   {
     id: '4',
-    title: 'How to optimize database queries in PostgreSQL?',
-    description: 'My application is running slow database queries. What are the best practices for optimizing PostgreSQL queries and improving performance?',
-    tags: ['postgresql', 'database', 'performance', 'sql'],
-    author: { name: 'Emily Chen', reputation: 3456 },
+    title: 'TypeScript strict mode configuration best practices',
+    description: 'What are the recommended TypeScript strict mode settings for a production React application? Looking for a balance between type safety and development experience.',
+    tags: ['typescript', 'react', 'configuration', 'strict-mode'],
+    author: { name: 'Emily Chen', reputation: 3420 },
     votes: 31,
-    answers: 12,
-    views: 567,
+    answers: 5,
+    views: 445,
     createdAt: '2024-01-13T14:15:00Z',
     hasAcceptedAnswer: true
   },
   {
     id: '5',
-    title: 'Understanding async/await vs Promises in JavaScript',
-    description: 'What\'s the difference between using async/await and traditional Promise chains? Which one should I prefer and why?',
-    tags: ['javascript', 'async-await', 'promises', 'es6'],
-    author: { name: 'David Wilson', reputation: 1789 },
+    title: 'Node.js memory leak debugging techniques',
+    description: 'I\'m experiencing memory leaks in my Node.js application. What are the best tools and techniques for identifying and fixing memory leaks?',
+    tags: ['node.js', 'javascript', 'debugging', 'memory-leak'],
+    author: { name: 'David Wilson', reputation: 1890 },
     votes: 19,
-    answers: 5,
-    views: 234,
+    answers: 4,
+    views: 267,
     createdAt: '2024-01-13T11:30:00Z'
+  },
+  {
+    id: '6',
+    title: 'Git workflow for feature branches and code review',
+    description: 'What\'s the best Git workflow for a team using feature branches? How do you handle code reviews, merge conflicts, and deployment?',
+    tags: ['git', 'workflow', 'code-review', 'feature-branches'],
+    author: { name: 'Lisa Brown', reputation: 2150 },
+    votes: 27,
+    answers: 6,
+    views: 389,
+    createdAt: '2024-01-12T16:45:00Z',
+    hasAcceptedAnswer: true
+  },
+  {
+    id: '7',
+    title: 'Docker multi-stage builds optimization',
+    description: 'How can I optimize my Docker multi-stage builds to reduce image size and build time? Looking for best practices and common pitfalls.',
+    tags: ['docker', 'optimization', 'multi-stage', 'containerization'],
+    author: { name: 'James Davis', reputation: 1670 },
+    votes: 14,
+    answers: 3,
+    views: 198,
+    createdAt: '2024-01-12T09:20:00Z'
+  },
+  {
+    id: '8',
+    title: 'AWS Lambda cold start optimization strategies',
+    description: 'What are the most effective strategies for reducing AWS Lambda cold start times? Looking for both code-level and infrastructure optimizations.',
+    tags: ['aws', 'lambda', 'optimization', 'serverless'],
+    author: { name: 'Maria Garcia', reputation: 2980 },
+    votes: 22,
+    answers: 4,
+    views: 312,
+    createdAt: '2024-01-11T13:10:00Z'
+  },
+  {
+    id: '9',
+    title: 'Algorithm complexity analysis for sorting algorithms',
+    description: 'Can someone explain the time and space complexity of different sorting algorithms? When should I use quicksort vs mergesort vs heapsort?',
+    tags: ['algorithms', 'sorting', 'complexity', 'data-structures'],
+    author: { name: 'Alex Thompson', reputation: 1340 },
+    votes: 18,
+    answers: 5,
+    views: 245,
+    createdAt: '2024-01-11T10:30:00Z',
+    hasAcceptedAnswer: true
+  },
+  {
+    id: '10',
+    title: 'SQL query optimization for large datasets',
+    description: 'I have a database with millions of records and my queries are slow. What are the best practices for optimizing SQL queries and database performance?',
+    tags: ['sql', 'optimization', 'database', 'performance'],
+    author: { name: 'Rachel Lee', reputation: 2760 },
+    votes: 25,
+    answers: 7,
+    views: 423,
+    createdAt: '2024-01-10T15:20:00Z'
   }
 ];
 
 interface QuestionsListProps {
-  currentUser?: any;
+  currentUser?: {
+    name: string;
+    email: string;
+    reputation: number;
+  } | null;
   onQuestionClick: (questionId: string) => void;
   onAskQuestion: () => void;
+  selectedTag?: string | null;
+  onTagClick?: (tag: string) => void;
 }
 
-export function QuestionsList({ currentUser, onQuestionClick, onAskQuestion }: QuestionsListProps) {
+export function QuestionsList({ currentUser, onQuestionClick, onAskQuestion, selectedTag, onTagClick }: QuestionsListProps) {
   const [questions, setQuestions] = useState(mockQuestions);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
   const handleVote = (questionId: string, voteType: 'up' | 'down') => {
     setQuestions(prev => prev.map(q => {
@@ -114,71 +179,79 @@ export function QuestionsList({ currentUser, onQuestionClick, onAskQuestion }: Q
                          q.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          q.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    if (filterBy === 'unanswered') return matchesSearch && q.answers === 0;
-    if (filterBy === 'solved') return matchesSearch && q.hasAcceptedAnswer;
-    return matchesSearch;
+    // Apply tag filter if selectedTag is provided
+    const matchesTag = selectedTag ? q.tags.some(tag => tag.toLowerCase() === selectedTag.toLowerCase()) : true;
+    
+    if (filterBy === 'unanswered') return matchesSearch && matchesTag && q.answers === 0;
+    if (filterBy === 'solved') return matchesSearch && matchesTag && q.hasAcceptedAnswer;
+    return matchesSearch && matchesTag;
   });
 
+  // Sort questions
   const sortedQuestions = [...filteredQuestions].sort((a, b) => {
     switch (sortBy) {
-      case 'votes':
-        return b.votes - a.votes;
-      case 'answers':
-        return b.answers - a.answers;
-      case 'views':
-        return b.views - a.views;
+      case 'newest':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       case 'oldest':
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      default: // newest
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'most-voted':
+        return b.votes - a.votes;
+      case 'most-answered':
+        return b.answers - a.answers;
+      case 'most-viewed':
+        return b.views - a.views;
+      default:
+        return 0;
     }
   });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedQuestions.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentQuestions = sortedQuestions.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Questions</h1>
+          <h1 className="text-3xl font-bold">
+            {selectedTag ? `Questions tagged "${selectedTag}"` : 'Questions'}
+          </h1>
           <p className="text-muted-foreground">
-            {filteredQuestions.length} questions found
+            {selectedTag 
+              ? `${filteredQuestions.length} questions found for "${selectedTag}"`
+              : `${filteredQuestions.length} questions found`
+            }
           </p>
         </div>
-        <Button onClick={onAskQuestion} className="gradient-primary">
-          <Plus className="h-4 w-4 mr-2" />
-          Ask Question
-        </Button>
+        {currentUser && (
+          <Button onClick={onAskQuestion} className="gradient-primary">
+            <Plus className="h-4 w-4 mr-2" />
+            Ask Question
+          </Button>
+        )}
       </div>
 
-      {/* Filters and Search */}
+      {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search questions..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search questions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
-
         <div className="flex gap-2">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-32">
-              <SortAsc className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="oldest">Oldest</SelectItem>
-              <SelectItem value="votes">Most Votes</SelectItem>
-              <SelectItem value="answers">Most Answers</SelectItem>
-              <SelectItem value="views">Most Views</SelectItem>
-            </SelectContent>
-          </Select>
-
           <Select value={filterBy} onValueChange={setFilterBy}>
             <SelectTrigger className="w-32">
               <Filter className="h-4 w-4 mr-2" />
@@ -190,37 +263,87 @@ export function QuestionsList({ currentUser, onQuestionClick, onAskQuestion }: Q
               <SelectItem value="solved">Solved</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-40">
+              <SortAsc className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectItem value="most-voted">Most Voted</SelectItem>
+              <SelectItem value="most-answered">Most Answered</SelectItem>
+              <SelectItem value="most-viewed">Most Viewed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Questions List */}
       <div className="space-y-4">
-        {sortedQuestions.length > 0 ? (
-          sortedQuestions.map((question) => (
+        {currentQuestions.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-muted-foreground mb-4">
+              {selectedTag 
+                ? `No questions found for "${selectedTag}"`
+                : 'No questions found'
+              }
+            </div>
+            {currentUser && (
+              <Button onClick={onAskQuestion} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Ask the first question
+              </Button>
+            )}
+          </div>
+        ) : (
+          currentQuestions.map((question) => (
             <QuestionCard
               key={question.id}
               question={question}
               onVote={handleVote}
-              onClick={onQuestionClick}
+              onClick={() => onQuestionClick(question.id)}
               currentUser={currentUser}
+              onTagClick={onTagClick}
             />
           ))
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No questions found matching your criteria.</p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery('');
-                setFilterBy('all');
-              }}
-            >
-              Clear Filters
-            </Button>
-          </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <Button
+                key={pageNum}
+                variant={pageNum === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(pageNum)}
+                className="w-8 h-8 p-0"
+              >
+                {pageNum}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

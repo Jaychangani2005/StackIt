@@ -1,11 +1,22 @@
-import { Home, HelpCircle, Users, Tag, TrendingUp, Star, Clock, Award } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { 
+  Home, 
+  HelpCircle, 
+  Tag, 
+  Users, 
+  Clock, 
+  TrendingUp, 
+  Star, 
+  Award 
+} from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
   activeSection: string;
   onSectionChange: (section: string) => void;
+  onTagClick?: (tag: string) => void;
+  popularTags?: Array<{ name: string; count: number }>;
 }
 
 const navigationItems = [
@@ -22,53 +33,52 @@ const categoryItems = [
   { id: 'bounty', label: 'Bounty', icon: Award },
 ];
 
-const popularTags = [
-  'javascript', 'react', 'python', 'typescript', 'node.js', 
-  'css', 'html', 'sql', 'git', 'algorithms'
-];
-
-export function Sidebar({ isOpen, activeSection, onSectionChange }: SidebarProps) {
+export function Sidebar({ isOpen, activeSection, onSectionChange, onTagClick, popularTags }: SidebarProps) {
   return (
     <aside className={cn(
       "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 transform border-r bg-card transition-transform md:relative md:top-0 md:h-screen md:translate-x-0",
       isOpen ? "translate-x-0" : "-translate-x-full"
     )}>
       <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Main Navigation */}
-          <div className="space-y-2">
+        <div className="flex-1 space-y-4 p-4">
+          {/* Navigation */}
+          <div>
             <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Navigation
             </h3>
-            {navigationItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeSection === item.id ? "secondary" : "ghost"}
-                className="w-full justify-start gap-3"
-                onClick={() => onSectionChange(item.id)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Button>
-            ))}
+            <nav className="space-y-1">
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeSection === item.id ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => onSectionChange(item.id)}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Button>
+              ))}
+            </nav>
           </div>
 
           {/* Categories */}
-          <div className="mt-8 space-y-2">
+          <div>
             <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Categories
             </h3>
-            {categoryItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeSection === item.id ? "secondary" : "ghost"}
-                className="w-full justify-start gap-3"
-                onClick={() => onSectionChange(item.id)}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Button>
-            ))}
+            <nav className="space-y-1">
+              {categoryItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant="ghost"
+                  className="w-full justify-start text-sm"
+                  onClick={() => onSectionChange(item.id)}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Button>
+              ))}
+            </nav>
           </div>
 
           {/* Popular Tags */}
@@ -77,13 +87,13 @@ export function Sidebar({ isOpen, activeSection, onSectionChange }: SidebarProps
               Popular Tags
             </h3>
             <div className="flex flex-wrap gap-2">
-              {popularTags.map((tag) => (
+              {(popularTags || []).slice(0, 8).map((tag) => (
                 <button
-                  key={tag}
-                  className="tag text-xs hover:bg-opacity-80 transition-colors"
-                  onClick={() => onSectionChange('tags')}
+                  key={tag.name}
+                  className="tag text-xs hover:bg-opacity-80 transition-colors cursor-pointer"
+                  onClick={() => onTagClick?.(tag.name)}
                 >
-                  {tag}
+                  {tag.name}
                 </button>
               ))}
             </div>

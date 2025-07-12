@@ -5,6 +5,7 @@ import { useAnswers } from '@/hooks/useAnswers';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Answer {
   id: string;
@@ -44,6 +45,7 @@ interface Question {
 export const QuestionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [question, setQuestion] = useState<Question | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -214,6 +216,20 @@ export const QuestionDetailPage = () => {
   };
 
   const handleAcceptAnswer = (answerId: string) => {
+    // Only one answer can be accepted at a time
+    if (question) {
+      setQuestion({
+        ...question,
+        answers: question.answers.map(a => ({
+          ...a,
+          isAccepted: a.id === answerId
+        }))
+      });
+      toast({
+        title: 'Answer accepted!',
+        description: 'You have marked this answer as the best solution.',
+      });
+    }
     acceptAnswer(answerId).catch(console.error);
   };
 

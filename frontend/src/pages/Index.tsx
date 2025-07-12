@@ -1,15 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { QuestionsList } from "@/components/questions/QuestionsList";
 import { AskQuestionForm } from "@/components/questions/AskQuestionForm";
-import { QuestionDetail } from "@/components/questions/QuestionDetail";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authDialog, setAuthDialog] = useState<{ isOpen: boolean; mode: 'login' | 'register' }>({
     isOpen: false,
@@ -18,7 +18,6 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('questions');
   const [askQuestionOpen, setAskQuestionOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
   const [notifications, setNotifications] = useState([
     {
       id: '1',
@@ -82,48 +81,8 @@ const Index = () => {
   };
 
   const handleQuestionClick = (questionId: string) => {
-    // Mock question data for demonstration
-    const mockQuestion = {
-      id: questionId,
-      title: "How to implement React hooks with TypeScript?",
-      content: "<p>I'm trying to create a custom hook that manages form state with TypeScript. Here's what I have so far:</p><pre><code>const useForm = (initialState: any) => {\n  const [state, setState] = useState(initialState);\n  // ... rest of implementation\n}</code></pre><p>But I'm getting type errors. Can someone help me fix this?</p>",
-      tags: ['react', 'typescript', 'hooks'],
-      author: {
-        name: 'John Doe',
-        reputation: 1245
-      },
-      votes: 15,
-      userVote: null,
-      answers: [
-        {
-          id: '1',
-          content: '<p>Here\'s how you can properly type your custom hook:</p><pre><code>interface FormState {\n  [key: string]: any;\n}\n\nconst useForm = (initialState: FormState) => {\n  const [state, setState] = useState<FormState>(initialState);\n  // ... rest of implementation\n}</code></pre>',
-          author: {
-            name: 'Sarah Smith',
-            reputation: 2890
-          },
-          votes: 8,
-          userVote: null,
-          isAccepted: true,
-          createdAt: new Date(Date.now() - 30 * 60 * 1000)
-        },
-        {
-          id: '2',
-          content: '<p>You can also use generics for more flexibility:</p><pre><code>const useForm = <T extends Record<string, any>>(initialState: T) => {\n  const [state, setState] = useState<T>(initialState);\n  // ... rest of implementation\n}</code></pre>',
-          author: {
-            name: 'Emily Chen',
-            reputation: 3456
-          },
-          votes: 5,
-          userVote: null,
-          isAccepted: false,
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-        }
-      ],
-      views: 156,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
-    };
-    setSelectedQuestion(mockQuestion);
+    // Navigate to the question detail page
+    navigate(`/questions/${questionId}`);
   };
 
   const handleQuestionSubmit = (questionData: any) => {
@@ -160,104 +119,6 @@ const Index = () => {
     });
   };
 
-  const handleVoteQuestion = (vote: 'up' | 'down') => {
-    if (!currentUser) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to vote on questions.",
-      });
-      return;
-    }
-    
-    if (selectedQuestion) {
-      setSelectedQuestion(prev => ({
-        ...prev,
-        userVote: prev.userVote === vote ? null : vote,
-        votes: prev.votes + (prev.userVote === vote ? -1 : prev.userVote ? 0 : 1)
-      }));
-    }
-  };
-
-  const handleVoteAnswer = (answerId: string, vote: 'up' | 'down') => {
-    if (!currentUser) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to vote on answers.",
-      });
-      return;
-    }
-    
-    if (selectedQuestion) {
-      setSelectedQuestion(prev => ({
-        ...prev,
-        answers: prev.answers.map(answer => {
-          if (answer.id === answerId) {
-            const newVote = answer.userVote === vote ? null : vote;
-            const voteChange = newVote ? (answer.userVote ? 0 : 1) : -1;
-            return {
-              ...answer,
-              userVote: newVote,
-              votes: answer.votes + voteChange
-            };
-          }
-          return answer;
-        })
-      }));
-    }
-  };
-
-  const handleAcceptAnswer = (answerId: string) => {
-    if (selectedQuestion) {
-      setSelectedQuestion(prev => ({
-        ...prev,
-        answers: prev.answers.map(answer => ({
-          ...answer,
-          isAccepted: answer.id === answerId
-        }))
-      }));
-      
-      toast({
-        title: "Answer accepted!",
-        description: "The answer has been marked as accepted.",
-      });
-    }
-  };
-
-  const handleSubmitAnswer = (content: string) => {
-    if (!currentUser) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to post answers.",
-      });
-      return;
-    }
-    
-    if (selectedQuestion) {
-      const newAnswer = {
-        id: Date.now().toString(),
-        content,
-        author: {
-          name: currentUser.name,
-          reputation: currentUser.reputation
-        },
-        votes: 0,
-        userVote: null,
-        isAccepted: false,
-        createdAt: new Date()
-      };
-      
-      setSelectedQuestion(prev => ({
-        ...prev,
-        answers: [...prev.answers, newAnswer]
-      }));
-      
-      toast({
-        title: "Answer posted!",
-        description: "Your answer has been posted successfully.",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -290,34 +151,14 @@ const Index = () => {
         {/* Main Content */}
         <main className="flex-1 p-6 md:ml-0">
           <div className="max-w-5xl mx-auto">
-            {selectedQuestion ? (
-              <div>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setSelectedQuestion(null)}
-                  className="mb-4"
-                >
-                  ← Back to Questions
-                </Button>
-                <QuestionDetail
-                  question={selectedQuestion}
-                  currentUser={currentUser}
-                  onVoteQuestion={handleVoteQuestion}
-                  onVoteAnswer={handleVoteAnswer}
-                  onAcceptAnswer={handleAcceptAnswer}
-                  onSubmitAnswer={handleSubmitAnswer}
-                />
-              </div>
-            ) : (
-              <>
-                {activeSection === 'questions' && (
-                  <QuestionsList
-                    currentUser={currentUser}
-                    onQuestionClick={handleQuestionClick}
-                    onAskQuestion={() => setAskQuestionOpen(true)}
-                  />
-                )}
-            
+            {activeSection === 'questions' && (
+              <QuestionsList
+                currentUser={currentUser}
+                onQuestionClick={handleQuestionClick}
+                onAskQuestion={() => setAskQuestionOpen(true)}
+              />
+            )}
+
             {activeSection === 'home' && (
               <div className="text-center py-12">
                 <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
@@ -396,8 +237,6 @@ const Index = () => {
                   ))}
                 </div>
               </div>
-            )}
-          </>
             )}
           </div>
         </main>

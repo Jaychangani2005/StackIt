@@ -1,0 +1,330 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Q&A Community Platform Design System - All colors MUST be HSL */
+
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 0 0% 100%;
+    --foreground: 218 11% 12%;
+
+    /* Card and surface colors */
+    --card: 0 0% 100%;
+    --card-foreground: 218 11% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 11% 12%;
+
+    /* Brand colors - Modern blue gradient theme */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 55%;
+
+    /* Secondary colors */
+    --secondary: 215 16% 95%;
+    --secondary-foreground: 218 11% 12%;
+
+    /* Muted colors */
+    --muted: 215 16% 95%;
+    --muted-foreground: 218 11% 65%;
+
+    /* Accent colors */
+    --accent: 215 16% 95%;
+    --accent-foreground: 218 11% 12%;
+
+    /* Status colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Interactive colors */
+    --border: 215 16% 88%;
+    --input: 215 16% 88%;
+    --ring: 217 91% 60%;
+
+    /* Q&A specific colors */
+    --upvote: 142 76% 36%;
+    --downvote: 0 84% 60%;
+    --accepted: 142 76% 36%;
+    --tag-bg: 217 91% 95%;
+    --tag-text: 217 91% 30%;
+
+    /* Design tokens */
+    --radius: 0.75rem;
+    --shadow-soft: 0 1px 3px 0 hsl(218 11% 12% / 0.1), 0 1px 2px 0 hsl(218 11% 12% / 0.06);
+    --shadow-medium: 0 4px 6px -1px hsl(218 11% 12% / 0.1), 0 2px 4px -1px hsl(218 11% 12% / 0.06);
+    --shadow-large: 0 10px 15px -3px hsl(218 11% 12% / 0.1), 0 4px 6px -2px hsl(218 11% 12% / 0.05);
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 50%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(215 16% 98%));
+
+    /* Animations */
+    --transition-fast: all 0.15s ease-in-out;
+    --transition-normal: all 0.3s ease-in-out;
+    --transition-slow: all 0.5s ease-in-out;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Base colors */
+    --background: 218 23% 7%;
+    --foreground: 215 16% 95%;
+
+    /* Card and surface colors */
+    --card: 218 23% 9%;
+    --card-foreground: 215 16% 95%;
+
+    --popover: 218 23% 9%;
+    --popover-foreground: 215 16% 95%;
+
+    /* Brand colors */
+    --primary: 217 91% 65%;
+    --primary-foreground: 218 23% 7%;
+    --primary-hover: 217 91% 70%;
+
+    /* Secondary colors */
+    --secondary: 218 23% 15%;
+    --secondary-foreground: 215 16% 85%;
+
+    /* Muted colors */
+    --muted: 218 23% 15%;
+    --muted-foreground: 215 16% 65%;
+
+    /* Accent colors */
+    --accent: 218 23% 15%;
+    --accent-foreground: 215 16% 85%;
+
+    /* Status colors */
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 60%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Interactive colors */
+    --border: 218 23% 20%;
+    --input: 218 23% 20%;
+    --ring: 217 91% 65%;
+
+    /* Q&A specific colors */
+    --upvote: 142 76% 45%;
+    --downvote: 0 84% 65%;
+    --accepted: 142 76% 45%;
+    --tag-bg: 217 91% 15%;
+    --tag-text: 217 91% 75%;
+
+    /* Shadows for dark mode */
+    --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+    --shadow-medium: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
+    --shadow-large: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 65%), hsl(217 91% 55%));
+    --gradient-card: linear-gradient(145deg, hsl(218 23% 9%), hsl(218 23% 12%));
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-md;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer components {
+  /* Custom utility classes */
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-large {
+    box-shadow: var(--shadow-large);
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .transition-fast {
+    transition: var(--transition-fast);
+  }
+
+  .transition-normal {
+    transition: var(--transition-normal);
+  }
+
+  .transition-slow {
+    transition: var(--transition-slow);
+  }
+
+  /* Vote button styles */
+  .vote-button {
+    @apply p-2 rounded-md transition-fast hover:bg-muted/80 flex items-center justify-center;
+  }
+
+  .vote-button.upvoted {
+    @apply text-green-600 bg-green-50 hover:bg-green-100;
+  }
+
+  .vote-button.downvoted {
+    @apply text-red-600 bg-red-50 hover:bg-red-100;
+  }
+
+  /* Tag styles */
+  .tag {
+    @apply inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium transition-fast;
+    background-color: hsl(var(--tag-bg));
+    color: hsl(var(--tag-text));
+  }
+
+  .tag:hover {
+    @apply opacity-80;
+  }
+
+  /* Prose styles for rich text content */
+  .prose {
+    @apply text-foreground;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply font-semibold text-foreground;
+  }
+
+  .prose h1 {
+    @apply text-2xl mb-4;
+  }
+
+  .prose h2 {
+    @apply text-xl mb-3;
+  }
+
+  .prose h3 {
+    @apply text-lg mb-2;
+  }
+
+  .prose p {
+    @apply mb-4 leading-relaxed;
+  }
+
+  .prose ul,
+  .prose ol {
+    @apply mb-4 pl-6;
+  }
+
+  .prose li {
+    @apply mb-1;
+  }
+
+  .prose ul {
+    @apply list-disc;
+  }
+
+  .prose ol {
+    @apply list-decimal;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-muted-foreground/20 pl-4 italic text-muted-foreground mb-4;
+  }
+
+  .prose code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  .prose pre {
+    @apply bg-muted p-4 rounded-md overflow-x-auto mb-4;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .prose a {
+    @apply text-primary underline hover:text-primary-hover;
+  }
+
+  .prose img {
+    @apply max-w-full h-auto rounded-md;
+  }
+
+  .prose table {
+    @apply w-full border-collapse mb-4;
+  }
+
+  .prose th,
+  .prose td {
+    @apply border border-border px-3 py-2 text-left;
+  }
+
+  .prose th {
+    @apply bg-muted font-semibold;
+  }
+}

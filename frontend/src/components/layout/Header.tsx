@@ -15,7 +15,7 @@ interface HeaderProps {
   currentUser?: {
     name: string;
     email: string;
-    reputation: number;
+    reputation?: number;
   } | null;
   onAuthAction: (action: 'login' | 'register' | 'logout') => void;
   notifications?: Array<{
@@ -104,7 +104,7 @@ export function Header({
                     <div className="hidden md:block text-left">
                       <div className="text-sm font-medium">{currentUser.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {currentUser.reputation} rep
+                        {currentUser.reputation || 0} rep
                       </div>
                     </div>
                   </Button>

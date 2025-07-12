@@ -5,17 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthDialogProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'login' | 'register';
-  onSubmit: (data: any, mode: 'login' | 'register') => void;
+  onAuthSuccess: (user: any) => void;
 }
 
-export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps) {
+export function AuthDialog({ isOpen, onClose, mode, onAuthSuccess }: AuthDialogProps) {
   const [activeTab, setActiveTab] = useState(mode);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,10 +26,11 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
     confirmPassword: ''
   });
   const [errors, setErrors] = useState<any>({});
+  const { toast } = useToast();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -44,9 +48,52 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
     
     setErrors(newErrors);
     
-    if (Object.keys(newErrors).length === 0) {
-      onSubmit(formData, activeTab);
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      let response;
+      
+      if (activeTab === 'register') {
+        response = await api.register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        });
+      } else {
+        response = await api.login({
+          email: formData.email,
+          password: formData.password
+        });
+      }
+
+      toast({
+        title: activeTab === 'register' ? 'Account created successfully!' : 'Welcome back!',
+        description: activeTab === 'register' ? 'Your account has been created and you are now logged in.' : 'You have been successfully logged in.',
+      });
+
+      onAuthSuccess(response.user);
       onClose();
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'An error occurred during authentication';
+      toast({
+        title: 'Authentication failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,6 +113,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
             size="sm"
             className="absolute right-2 top-2"
             onClick={onClose}
+            disabled={isLoading}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -95,6 +143,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                       className="pl-10"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
+                      disabled={isLoading}
                     />
                   </div>
                   {errors.name && (
@@ -114,6 +163,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                     className="pl-10"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 {errors.email && (
@@ -132,6 +182,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                     className="pl-10 pr-10"
                     value={formData.password}
                     onChange={(e) => handleInputChange('password', e.target.value)}
+                    disabled={isLoading}
                   />
                   <Button
                     type="button"
@@ -139,6 +190,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                     size="sm"
                     className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -164,6 +216,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                       className="pl-10"
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      disabled={isLoading}
                     />
                   </div>
                   {errors.confirmPassword && (
@@ -172,8 +225,15 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                 </div>
               </TabsContent>
 
-              <Button type="submit" className="w-full gradient-primary">
-                {activeTab === 'login' ? 'Sign In' : 'Create Account'}
+              <Button type="submit" className="w-full gradient-primary" disabled={isLoading}>
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {activeTab === 'login' ? 'Signing In...' : 'Creating Account...'}
+                  </div>
+                ) : (
+                  activeTab === 'login' ? 'Sign In' : 'Create Account'
+                )}
               </Button>
             </form>
           </Tabs>
@@ -186,6 +246,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                   variant="link"
                   className="p-0 h-auto text-primary"
                   onClick={() => setActiveTab('register')}
+                  disabled={isLoading}
                 >
                   Sign up
                 </Button>
@@ -197,6 +258,7 @@ export function AuthDialog({ isOpen, onClose, mode, onSubmit }: AuthDialogProps)
                   variant="link"
                   className="p-0 h-auto text-primary"
                   onClick={() => setActiveTab('login')}
+                  disabled={isLoading}
                 >
                   Sign in
                 </Button>

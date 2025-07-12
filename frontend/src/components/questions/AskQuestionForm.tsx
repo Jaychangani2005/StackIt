@@ -9,6 +9,8 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { stripHtmlAndCount, stripHtml } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface AskQuestionFormProps {
   isOpen: boolean;
@@ -23,8 +25,8 @@ export function AskQuestionForm({ isOpen, onClose, onSubmit }: AskQuestionFormPr
     tags: [] as string[]
   });
   const [errors, setErrors] = useState<any>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   // Reset form when opened/closed
   useEffect(() => {
@@ -35,8 +37,7 @@ export function AskQuestionForm({ isOpen, onClose, onSubmit }: AskQuestionFormPr
         tags: []
       });
       setErrors({});
-      setIsSubmitting(false);
-      setShowSuccess(false);
+      setIsLoading(false);
     }
   }, [isOpen]);
 
@@ -88,37 +89,50 @@ export function AskQuestionForm({ isOpen, onClose, onSubmit }: AskQuestionFormPr
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length === 0) {
-      setIsSubmitting(true);
+      setIsLoading(true);
       
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const questionData = {
-          id: Date.now().toString(),
-          title: formData.title.trim(),
-          description: formData.description.trim(),
+        const response = await api.createQuestion({
+          title: formData.title,
+          description: formData.description,
+          tags: formData.tags
+        });
+
+        toast({
+          title: 'Question posted successfully!',
+          description: 'Your question has been published and is now visible to the community.',
+        });
+
+        // Call the parent's onSubmit with the new question data
+        onSubmit({
+          id: response.questionId,
+          title: formData.title,
+          description: formData.description,
           tags: formData.tags,
           author: { name: 'Current User', reputation: 100 },
           votes: 0,
           answers: 0,
           views: 0,
           createdAt: new Date().toISOString()
-        };
+        });
         
-        onSubmit(questionData);
-        setShowSuccess(true);
+        onClose();
         
-        // Close form after success
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-        
-      } catch (error) {
-        console.error('Error submitting question:', error);
-        setErrors({ submit: 'Failed to submit question. Please try again.' });
-      } finally {
-        setIsSubmitting(false);
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          tags: []
+        });
+        setErrors({});
+        setIsLoading(false);
+      } catch (error: any) {
+        toast({
+          title: 'Error posting question',
+          description: error.message || 'Failed to post question. Please try again.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
       }
     }
   };
@@ -170,161 +184,123 @@ export function AskQuestionForm({ isOpen, onClose, onSubmit }: AskQuestionFormPr
           <Button
             variant="ghost"
             size="sm"
-            className="absolute right-2 top-2"
+            className="absolute right-4 top-4 h-8 w-8 p-0"
             onClick={onClose}
-            disabled={isSubmitting}
           >
             <X className="h-4 w-4" />
           </Button>
-          <CardTitle>Ask a Question</CardTitle>
+          <CardTitle className="text-2xl">Ask a Question</CardTitle>
           <CardDescription>
-            Be specific and clear in your question to get the best answers
+            Share your knowledge and get help from the community
           </CardDescription>
-          
-          {/* Progress bar */}
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Form completion</span>
-              <span>{completionPercentage}%</span>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {/* Form Progress */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Form Completion</span>
+              <span className="font-medium">{completionPercentage}%</span>
             </div>
             <Progress value={completionPercentage} className="h-2" />
           </div>
-        </CardHeader>
-        
-        <CardContent>
-          {showSuccess && (
-            <Alert className="mb-6 border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                Question submitted successfully! Redirecting...
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {errors.submit && (
-            <Alert className="mb-6 border-red-200 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                {errors.submit}
-              </AlertDescription>
-            </Alert>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title" className="flex items-center gap-2">
-                Title *
-                {formData.title && !errors.title && (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
+              <Label htmlFor="title" className="text-base font-medium">
+                Title
               </Label>
               <Input
                 id="title"
-                placeholder="What's your programming question?"
+                type="text"
+                placeholder="What's your question? Be specific."
                 value={formData.title}
                 onChange={(e) => handleFieldChange('title', e.target.value)}
                 className={errors.title ? 'border-destructive' : ''}
-                disabled={isSubmitting}
+                disabled={isLoading}
               />
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {titleCharCount}/150 characters
+                <span className={errors.title ? 'text-destructive' : 'text-muted-foreground'}>
+                  {errors.title || 'Be specific and imagine you\'re asking another person'}
                 </span>
-                {titleCharCount < 10 && titleCharCount > 0 && (
-                  <span className="text-amber-600">
-                    At least {10 - titleCharCount} more characters needed
-                  </span>
-                )}
+                <span className={titleCharCount > 150 ? 'text-destructive' : 'text-muted-foreground'}>
+                  {titleCharCount}/150
+                </span>
               </div>
-              {errors.title && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.title}
-                </p>
-              )}
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="flex items-center gap-2">
-                Description *
-                {formData.description && !errors.description && (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
+              <Label htmlFor="description" className="text-base font-medium">
+                Description
               </Label>
               <RichTextEditor
                 content={formData.description}
-                onChange={(content) => handleFieldChange('description', content)}
-                placeholder="Describe your problem in detail. Include what you've tried and what error messages you're getting..."
+                onChange={(value) => handleFieldChange('description', value)}
+                placeholder="Provide all the information someone would need to answer your question..."
                 className={errors.description ? 'border-destructive' : ''}
               />
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
+                <span className={errors.description ? 'text-destructive' : 'text-muted-foreground'}>
+                  {errors.description || 'Include all the information someone would need to answer your question'}
+                </span>
+                <span className={descriptionCharCount < 20 ? 'text-destructive' : 'text-muted-foreground'}>
                   {descriptionCharCount} characters
                 </span>
-                {descriptionCharCount < 20 && descriptionCharCount > 0 && (
-                  <span className="text-amber-600">
-                    At least {20 - descriptionCharCount} more characters needed
-                  </span>
-                )}
               </div>
-              {errors.description && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.description}
-                </p>
-              )}
             </div>
 
             {/* Tags */}
             <div className="space-y-2">
-              <Label htmlFor="tags" className="flex items-center gap-2">
-                Tags *
-                {formData.tags.length > 0 && !errors.tags && (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                )}
+              <Label className="text-base font-medium">
+                Tags
               </Label>
               <MultiSelect
                 options={tagOptions}
                 value={formData.tags}
-                onChange={(tags) => handleFieldChange('tags', tags)}
-                placeholder="Select or create tags..."
+                onChange={(value) => handleFieldChange('tags', value)}
+                placeholder="Add up to 5 tags..."
                 maxItems={5}
-                disabled={isSubmitting}
               />
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {formData.tags.length}/5 tags selected
+                <span className={errors.tags ? 'text-destructive' : 'text-muted-foreground'}>
+                  {errors.tags || 'Add up to 5 tags to describe what your question is about'}
                 </span>
-                {formData.tags.length === 0 && (
-                  <span className="text-amber-600">
-                    At least one tag is required
-                  </span>
-                )}
+                <span className="text-muted-foreground">
+                  {formData.tags.length}/5
+                </span>
               </div>
-              {errors.tags && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.tags}
-                </p>
-              )}
             </div>
+
+            {/* Tips */}
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Writing a good question:</strong>
+                <ul className="mt-2 space-y-1 text-sm">
+                  <li>• Be specific and provide context</li>
+                  <li>• Include code examples if relevant</li>
+                  <li>• Explain what you've already tried</li>
+                  <li>• Use clear, descriptive language</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
 
             {/* Submit buttons */}
             <div className="flex gap-3 pt-4">
-              <Button 
-                type="submit" 
-                className="gradient-primary"
-                disabled={isSubmitting || completionPercentage < 100}
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/90"
+                disabled={isLoading}
               >
-                {isSubmitting ? 'Posting Question...' : 'Post Question'}
+                {isLoading ? 'Posting...' : 'Post Question'}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onClose}
-                disabled={isSubmitting}
+                disabled={isLoading}
               >
                 Cancel
               </Button>

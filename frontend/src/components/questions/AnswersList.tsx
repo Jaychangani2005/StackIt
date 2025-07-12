@@ -6,30 +6,19 @@ import { MessageSquare, Filter } from 'lucide-react';
 import { AnswerCard } from './AnswerCard';
 import { AnswerForm } from './AnswerForm';
 
-interface Comment {
-  id: string;
-  content: string;
-  author: {
-    name: string;
-    avatar?: string;
-  };
-  createdAt: Date;
-}
-
 interface Answer {
   id: string;
   content: string;
   author: {
-    id: string;
+    id: number;
     name: string;
-    avatar?: string;
     reputation: number;
   };
   votes: number;
   userVote: 'up' | 'down' | null;
   isAccepted: boolean;
-  createdAt: Date;
-  updatedAt?: Date;
+  createdAt: string;
+  updatedAt?: string;
   commentCount?: number;
 }
 
@@ -64,36 +53,47 @@ export const AnswersList = ({
 }: AnswersListProps) => {
   const [showAnswerForm, setShowAnswerForm] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('votes');
-  // Comments state: { [answerId]: Comment[] }
-  const [commentsByAnswer, setCommentsByAnswer] = useState<{ [answerId: string]: Comment[] }>({});
 
   const sortAnswers = (answers: Answer[], sortOption: SortOption): Answer[] => {
     const sorted = [...answers];
+    
     switch (sortOption) {
       case 'votes':
         return sorted.sort((a, b) => {
+          // Accepted answers first
           if (a.isAccepted && !b.isAccepted) return -1;
           if (!a.isAccepted && b.isAccepted) return 1;
+          // Then by votes
           return b.votes - a.votes;
         });
+      
       case 'newest':
         return sorted.sort((a, b) => {
+          // Accepted answers first
           if (a.isAccepted && !b.isAccepted) return -1;
           if (!a.isAccepted && b.isAccepted) return 1;
+          // Then by creation date (newest first)
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
+      
       case 'oldest':
         return sorted.sort((a, b) => {
+          // Accepted answers first
           if (a.isAccepted && !b.isAccepted) return -1;
           if (!a.isAccepted && b.isAccepted) return 1;
+          // Then by creation date (oldest first)
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
+      
       case 'accepted':
         return sorted.sort((a, b) => {
+          // Accepted answers first
           if (a.isAccepted && !b.isAccepted) return -1;
           if (!a.isAccepted && b.isAccepted) return 1;
+          // Then by votes
           return b.votes - a.votes;
         });
+      
       default:
         return sorted;
     }
@@ -108,27 +108,6 @@ export const AnswersList = ({
     setShowAnswerForm(false);
   };
 
-  // Add a comment to an answer
-  const handleAddComment = async (answerId: string, content: string) => {
-    // Simulate async
-    await new Promise(res => setTimeout(res, 300));
-    setCommentsByAnswer(prev => ({
-      ...prev,
-      [answerId]: [
-        ...(prev[answerId] || []),
-        {
-          id: Date.now().toString(),
-          content,
-          author: {
-            name: currentUser?.name || 'Anonymous',
-            avatar: currentUser?.avatar
-          },
-          createdAt: new Date()
-        }
-      ]
-    }));
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -137,6 +116,7 @@ export const AnswersList = ({
           <h2 className="text-xl font-semibold">
             {answers.length} Answer{answers.length !== 1 ? 's' : ''}
           </h2>
+          
           {answers.length > 1 && (
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
@@ -154,12 +134,14 @@ export const AnswersList = ({
             </div>
           )}
         </div>
+        
         {currentUser && !showAnswerForm && (
           <Button onClick={() => setShowAnswerForm(true)}>
             Post Answer
           </Button>
         )}
       </div>
+
       {/* Answer Form */}
       {showAnswerForm && (
         <AnswerForm
@@ -170,6 +152,7 @@ export const AnswersList = ({
           error={answerError}
         />
       )}
+
       {/* No Answers State */}
       {answers.length === 0 && (
         <Card>
@@ -187,6 +170,7 @@ export const AnswersList = ({
           </CardContent>
         </Card>
       )}
+
       {/* Answers List */}
       {answers.length > 0 && (
         <div className="space-y-4">
@@ -206,12 +190,11 @@ export const AnswersList = ({
                   onAccept={onAcceptAnswer}
                   onEdit={onEditAnswer}
                   onDelete={onDeleteAnswer}
-                  comments={commentsByAnswer[answer.id] || []}
-                  onAddComment={handleAddComment}
                 />
               ))}
             </div>
           )}
+
           {/* Regular Answers */}
           {regularAnswers.length > 0 && (
             <div className="space-y-4">
@@ -230,8 +213,6 @@ export const AnswersList = ({
                   onAccept={onAcceptAnswer}
                   onEdit={onEditAnswer}
                   onDelete={onDeleteAnswer}
-                  comments={commentsByAnswer[answer.id] || []}
-                  onAddComment={handleAddComment}
                 />
               ))}
             </div>
